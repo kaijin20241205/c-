@@ -13,36 +13,6 @@
 using namespace std;
 
 
-
-// 发生错误时打印错误信息、代码行号并退出程序
-void errorExit(bool errorFlag, const char* errMsg, int errLine)
-{
-    if (errorFlag == true)
-    {
-        fprintf(stderr, "Error %s at: %d", errMsg, errLine);
-        exit(EXIT_FAILURE);
-    }
-}
-
-// 发生错误时打印错误信息、代码行号
-void errorPrint(bool errorFLag, const char* errMsg, int errLine)
-{
-    if (errorFLag == true)
-    {
-        fprintf(stderr, "Error %s at: %d", errMsg, errLine);
-    }
-}
-
-
-void echoServer(char* data, int dataLen, string* sendMsg)
-{
-    copy(data, data + dataLen, sendMsg->data());
-}
-
-
-// 向前声明
-struct EpollThreadPoll;
-
 struct Buffer
 {
 
@@ -53,51 +23,6 @@ struct Buffer
     // 写指针缓冲区指针
     int writeIndex_;
 };
-
-
-// 事件回调结构体
-struct EpvCallback
-{
-    // 被监听的文件描述符
-    int fd_;
-    // 监听的事件类型
-    int events_;
-    // 发生变化后我们要做的业务逻辑
-    void(*callback_)(int fd, int events, void* data);
-    // 对应线程的epoll树根节点
-    int epfd_;
-    // 接受缓冲区
-    Buffer* inputBuf_;
-    // 发送缓冲区
-    Buffer* outputBuf_;
-    // 线程池指针
-    // EpollThreadPoll* epollThreadPoll_;
-};
-
-EpvCallback* initEpvCallback(int fd, 
-                            int events, 
-                            void(*callback)(int fd, int revents, void*data), 
-                            int epfd, 
-                            EpollThreadPoll* epollThreadPoll)
-{
-    EpvCallback* epvCallback = new EpvCallback;
-    errorExit(
-        epvCallback == nullptr, 
-        "initEpvCallback error", 
-        __LINE__
-    );
-    memset(epvCallback, 0x00, sizeof(EpvCallback));
-    epvCallback->fd_ = fd;
-    epvCallback->events_ = events;
-    epvCallback->callback_ = callback;
-    // epvCallback->epollThreadPoll_ = epollThreadPoll;
-    // 应该是initBuffer
-    // epvCallback->inputBuf_ = new Buffer;
-    // memset(epvCallback->inputBuf_, 0x00, sizeof(Buffer));
-    // epvCallback->outputBuf_ = new Buffer;
-    // memset(epvCallback->outputBuf_, 0x00, sizeof(Buffer));
-
-}
 
 struct EpollThreadPoll
 {
@@ -126,6 +51,127 @@ struct EpollThreadPoll
     // 主、子线程用来通信的文件描述符，来控制按照次序创建子线程
     int evnetFd_;
 };
+
+// 事件回调结构体
+struct EpvCallback
+{
+    // 被监听的文件描述符
+    int fd_;
+    // 监听的事件类型
+    int events_;
+    // 发生变化后我们要做的业务逻辑
+    void(*callback_)(int fd, int events, void* data);
+    // 对应线程的epoll树根节点
+    int epfd_;
+    // 接受缓冲区
+    Buffer* inputBuf_;
+    // 发送缓冲区
+    Buffer* outputBuf_;
+    // 线程池指针
+    EpollThreadPoll* epollThreadPoll_;
+};
+
+
+// 发生错误时打印错误信息、代码行号并退出程序
+void errorExit(bool errorFlag, const char* errMsg, int errLine)
+{
+    if (errorFlag == true)
+    {
+        fprintf(stderr, "Error %s at: %d", errMsg, errLine);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// 发生错误时打印错误信息、代码行号
+void errorPrint(bool errorFLag, const char* errMsg, int errLine)
+{
+    if (errorFLag == true)
+    {
+        fprintf(stderr, "Error %s at: %d", errMsg, errLine);
+    }
+}
+
+
+// void echoServer(char* data, int dataLen, string* sendMsg)
+// {
+//     copy(data, data + dataLen, sendMsg->data());
+// }
+
+void epollAdd(void* data)
+{
+    EpvCallback* epvCallback = reinterpret_cast<EpvCallback*>(data);
+    epoll_event epv{0};
+    epv.events = epvCallback->events_;
+    epv.data.ptr = data;
+    errorExit(
+        epoll_ctl(epvCallback->epfd_, EPOLL_CTL_ADD, epvCallback->fd_, &epv) == -1, 
+        "epollAdd error", 
+        __LINE__
+    );
+}
+
+void epollMod(void* data)
+{
+    EpvCallback* epvCallback = reinterpret_cast<EpvCallback*>(data);
+    epoll_event epv{0};
+    epv.events = epvCallback->events_;
+    epv.data.ptr = data;
+    errorPrint(
+        epoll_ctl(epvCallback->epfd_, EPOLL_CTL_MOD, epvCallback->fd_, &epv) == -1, 
+        "epollMdd error", 
+        __LINE__
+    );
+}
+
+void epollDel(void* data)
+{
+    EpvCallback* epvCallback = reinterpret_cast<EpvCallback*>(data);
+    errorPrint(
+        epoll_ctl(epvCallback->epfd_, EPOLL_CTL_MOD, epvCallback->fd_, nullptr) == -1, 
+        "epollMdd error", 
+        __LINE__
+    );
+}
+
+
+
+
+// 向前声明
+struct EpollThreadPoll;
+
+
+
+
+
+
+EpvCallback* initEpvCallback(int fd, 
+                            int events, 
+                            void(*callback)(int fd, int revents, void*data), 
+                            int epfd) 
+                            // EpollThreadPoll* epollThreadPoll)
+{
+    EpvCallback* epvCallback = new EpvCallback;
+    errorExit(
+        epvCallback == nullptr, 
+        "initEpvCallback error", 
+        __LINE__
+    );
+    memset(epvCallback, 0x00, sizeof(EpvCallback));
+    epvCallback->fd_ = fd;
+    epvCallback->events_ = events;
+    epvCallback->callback_ = callback;
+    epvCallback->epfd_ = epfd;
+    epvCallback->epollThreadPoll_ = nullptr;
+    // 应该是initBuffer
+    // epvCallback->inputBuf_ = new Buffer;
+    // memset(epvCallback->inputBuf_, 0x00, sizeof(Buffer));
+    // epvCallback->outputBuf_ = new Buffer;
+    // memset(epvCallback->outputBuf_, 0x00, sizeof(Buffer));
+
+    return epvCallback;
+}
+
+
 
 // 子线程运行函数
 void* threadWorkFunc(void* data)
@@ -317,8 +363,6 @@ void threadPollDestory(EpollThreadPoll* epollThreadPoll)
     cout << "threadPoll deleted..." << endl;
 }
 
-
-
 // 向前声明
 void writer(int cfd, int revents, void* data);
 void reader(int cfd, int revents, void* data);
@@ -369,81 +413,74 @@ void reader(int cfd, int revents, void* data)
     // cout << "subthread: " << pthread_self() << "reader function working..." << endl;
     EpvCallback* epvCallbackEvent = reinterpret_cast<EpvCallback*>(data);
     // 1、有消息可读-配合堆区内存使用readv一次将数据都读完
+    cout << "reader..." << endl;
     if (revents & EPOLLIN && epvCallbackEvent->events_ & EPOLLIN)
     {
-        const int enableWriteSize = epvCallbackEvent->inputBufLen_ - epvCallbackEvent->inputIndex_;
-        const int iovcnt = enableWriteSize < 65536 ? 2 : 1;
-        // 1.1、创建一个堆区变量一起作为缓冲区
-        char tempBuf[65536]{0};
-        iovec vec[2];
-        
-        vec[0].iov_len = enableWriteSize;
-        vec[0].iov_base = epvCallbackEvent->inputBuf_ + epvCallbackEvent->inputIndex_;
-        vec[1].iov_len = sizeof(tempBuf);
-        vec[1].iov_base = tempBuf;
+        // const int enableWriteSize = epvCallbackEvent->inputBufLen_ - epvCallbackEvent->inputIndex_;
+        // const int iovcnt = enableWriteSize < 65536 ? 2 : 1;
+        // // 1.1、创建一个堆区变量一起作为缓冲区
+        // char tempBuf[65536]{0};
+        // iovec vec[2];
+        // vec[0].iov_len = enableWriteSize;
+        // vec[0].iov_base = epvCallbackEvent->inputBuf_ + epvCallbackEvent->inputIndex_;
+        // vec[1].iov_len = sizeof(tempBuf);
+        // vec[1].iov_base = tempBuf;
+        // const ssize_t n = readv(epvCallbackEvent->fd_, vec, iovcnt);
+        // // readv发生错误或者对端断开连接
+        // if (n <= 0)
+        // {
+        //     cout << "close: " << cfd << endl;
+        //     epoll_ctl(epvCallbackEvent->epfd_, EPOLL_CTL_DEL, cfd, NULL);
+        //     close(cfd);
+        //     // 释放EpvCallback在堆区的内存
+        //     delete[] epvCallbackEvent->inputBuf_;
+        //     delete[] epvCallbackEvent->outputBuf_;
+        //     delete epvCallbackEvent;
+        //     return;
+        // }
+        // // 1.2、只用到事件回调函数自带的缓冲区
+        // else if (n <= enableWriteSize)
+        // {
+        //     epvCallbackEvent->inputIndex_ += n;
+        // }
+        // // 1.3、用到了栈区的缓冲区，一个socket（UDP）包最大只有65535-8（首部）=65527
+        // else
+        // {
+        //     int tempBufLen = n - enableWriteSize;
+        //     char* newBuf = new char[epvCallbackEvent->inputBufLen_ + tempBufLen];
+        //     copy(epvCallbackEvent->inputBuf_, 
+        //         epvCallbackEvent->inputBuf_ + epvCallbackEvent->inputBufLen_, 
+        //         newBuf);
+        //     copy(tempBuf, tempBuf + tempBufLen, newBuf + epvCallbackEvent->inputBufLen_);
 
-        const ssize_t n = readv(epvCallbackEvent->fd_, vec, iovcnt);
-        // readv发生错误或者对端断开连接
-        if (n <= 0)
-        {
-            cout << "close: " << cfd << endl;
-            epoll_ctl(epvCallbackEvent->epfd_, EPOLL_CTL_DEL, cfd, NULL);
-            close(cfd);
-            // 释放EpvCallback在堆区的内存
-            delete[] epvCallbackEvent->inputBuf_;
-            delete[] epvCallbackEvent->outputBuf_;
-            delete epvCallbackEvent;
-            return;
-        }
-        // 1.2、只用到事件回调函数自带的缓冲区
-        else if (n <= enableWriteSize)
-        {
-            epvCallbackEvent->inputIndex_ += n;
-        }
-        // 1.3、用到了栈区的缓冲区，一个socket（UDP）包最大只有65535-8（首部）=65527
-        else
-        {
-            int tempBufLen = n - enableWriteSize;
-            char* newBuf = new char[epvCallbackEvent->inputBufLen_ + tempBufLen];
-            copy(epvCallbackEvent->inputBuf_, 
-                epvCallbackEvent->inputBuf_ + epvCallbackEvent->inputBufLen_, 
-                newBuf);
-            copy(tempBuf, tempBuf + tempBufLen, newBuf + epvCallbackEvent->inputBufLen_);
-
-            delete[] epvCallbackEvent->inputBuf_;
-            epvCallbackEvent->inputBuf_ = newBuf;
-            epvCallbackEvent->inputBufLen_ = epvCallbackEvent->inputBufLen_ + tempBufLen;
-            epvCallbackEvent->inputIndex_ = epvCallbackEvent->inputBufLen_ + tempBufLen;
-        }
-
-        int enableWrite = epvCallbackEvent->outputBufLen_ - epvCallbackEvent->outputIndex_;
-
-        // 1.4、如果发送缓冲区可写数据小于要
-        if (enableWrite < epvCallbackEvent->inputIndex_)
-        {
-            delete
-        }
-        else
-        {
-            copy(epvCallbackEvent->inputBuf_, 
-                    epvCallbackEvent->inputBuf_ + epvCallbackEvent->inputIndex_, 
-                    epvCallbackEvent->outputBuf_ + epvCallbackEvent->outputIndex_);
-        }
-
-        int n = write(epvCallbackEvent->fd_, 
-                        epvCallbackEvent->inputBuf_, 
-                        epvCallbackEvent->inputBufLen_);
-        // 发送一部分
-        if (0 < n < epvCallbackEvent->inputBufLen_)
-        {
-            int maining = epvCallbackEvent->inputBufLen_ - n;
-            if (maining > epvCallbackEvent->outputBufLen_)
-            {
-
-            }
-        }
-
-
+        //     delete[] epvCallbackEvent->inputBuf_;
+        //     epvCallbackEvent->inputBuf_ = newBuf;
+        //     epvCallbackEvent->inputBufLen_ = epvCallbackEvent->inputBufLen_ + tempBufLen;
+        //     epvCallbackEvent->inputIndex_ = epvCallbackEvent->inputBufLen_ + tempBufLen;
+        // }
+        // int enableWrite = epvCallbackEvent->outputBufLen_ - epvCallbackEvent->outputIndex_;
+        // // 1.4、如果发送缓冲区可写数据小于要
+        // if (enableWrite < epvCallbackEvent->inputIndex_)
+        // {
+        //     delete
+        // }
+        // else
+        // {
+        //     copy(epvCallbackEvent->inputBuf_, 
+        //             epvCallbackEvent->inputBuf_ + epvCallbackEvent->inputIndex_, 
+        //             epvCallbackEvent->outputBuf_ + epvCallbackEvent->outputIndex_);
+        // }
+        // int n = write(epvCallbackEvent->fd_, 
+        //                 epvCallbackEvent->inputBuf_, 
+        //                 epvCallbackEvent->inputBufLen_);
+        // // 发送一部分
+        // if (0 < n < epvCallbackEvent->inputBufLen_)
+        // {
+        //     int maining = epvCallbackEvent->inputBufLen_ - n;
+        //     if (maining > epvCallbackEvent->outputBufLen_)
+        //     {
+        //     }
+        // }
     }
 }
 
@@ -460,47 +497,8 @@ void acceptor(int lfd, int revents, void* data)
         if (cfd > 0)
         {
             cout << "mainthread: " << pthread_self() << "hello cfd:" << cfd << endl;
-            // 2.2、为这个通信套接字cfd创建并绑定一个epoll_event结构体对象
-            // 2.2.1、创建epoll_event结构体对象
-            epoll_event cfdEpv;
-            // 2.2.2、初始化epoll_event结构体对象
-            memset(&cfdEpv, 0x00, sizeof(epoll_event));
-            // 2.2.3设置poll_event结构体对象的监听事件属性为EPOLLIN
-            cfdEpv.events = EPOLLIN;
-            // 2.3、为这个通信套接字cfd绑定的epoll_evnet结构体对象创建并绑定一个事件回调结构体对象
-            // 2.3.1、创建事件回调结构体对象
-            EpvCallback* cfdEpvCallbackEvent = new EpvCallback;
-            // 2.3.2、事件回调结构体对象初始化
-            memset(cfdEpvCallbackEvent, 0x00, sizeof(EpvCallback));
-            // 2.3.3、设置事件回调结构体对象的各个属性
-            /*
-                通过监听套接字绑定的事件回调结构体中的线程池对象中的getNextSubThtreadEpfd方法获得一个epfd，并
-                将该epfd绑定到通信套接字绑定的事件回调结构体对象的epfd_属性上
-            */
-            cfdEpvCallbackEvent->epfd_  = lfdEpvCallback->threadPoll_->getNextSubThtreadEpfd();
-            // 设置通信套接字绑定的事件回调结构体对象的套接字
-            cfdEpvCallbackEvent->fd_ = cfd;
-            // 设置通信套接字绑定的事件回调结构体对象要监听的事件
-            cfdEpvCallbackEvent->events_ = cfdEpv.events;
-            // 五、设置通信套接字绑定的事件回调结构体对象的回调函数
-            /*
-                reader将数据从套接字中读取到缓冲区，调用用户函数
-            */
-            cfdEpvCallbackEvent->callback_ = reader;
-            // 设置通信套接字绑定的事件回调结构体对象的线程池属性，子线程不需要该属性就设置为空
-            cfdEpvCallbackEvent->threadPoll_ = nullptr;
-            // 设置通信套接字绑定的事件回调结构体对象的读写缓冲区大小（堆区）
-            cfdEpvCallbackEvent->inputBuf_ = new char[4096]{0};
-            cfdEpvCallbackEvent->inputBufLen_ = 4096;
-            cfdEpvCallbackEvent->inputIndex_ = 0;
-            cfdEpvCallbackEvent->outputBuf_ = new char[4096]{0};
-            cfdEpvCallbackEvent->outputBufLen_ = 4096;
-            cfdEpvCallbackEvent->outputIndex_ = 0;
-            // 2.3.4、将epoll_event的回调指针指向cfdEpvCallback，完成epoll_event结构体与epvCallback结构体的绑定操作
-            cfdEpv.data.ptr = reinterpret_cast<void*>(cfdEpvCallbackEvent);
-
-            // 2.2.4、将这个epoll_event添加到epoll上，完成通信套接字cfd与epoll_evnet的绑定操作
-            epoll_ctl(cfdEpvCallbackEvent->epfd_, EPOLL_CTL_ADD, cfd, &cfdEpv);
+            EpvCallback* cfdEpvCallback = initEpvCallback(cfd, EPOLLIN, reader, lfdEpvCallback->epollThreadPoll_->getNextSubThtreadEpfd());
+            epollAdd(reinterpret_cast<void*>(cfdEpvCallback));
         }
         // 调用accept4发送时发送错误
         else
@@ -626,7 +624,7 @@ int main()
     // 设置监听套接字所属的epoll
     epvCallbackEvent.epfd_ = epollThreadPoll->mainThreadEpfd;
     // 设置一下线程池对象
-    // epvCallbackEvent.threadPoll_ = threadPoll;
+    epvCallbackEvent.epollThreadPoll_ = epollThreadPoll;
 
     // 7、将监听套接字绑定的epoll_evnet中的data.ptr指针指向监听套接字回调结构体对象，完成epoll_event与事件回调结构体对象的绑定
     lfdEpv.data.ptr = reinterpret_cast<void*>(&epvCallbackEvent);
@@ -647,7 +645,7 @@ int main()
     // 10、启动主线程的epoll_wait
     while (true)
     {
-        int num = epoll_wait(epfd, &*epvs.begin(), epvs.size(), epollWaitSecondMs);
+        int num = epoll_wait(epvCallbackEvent.epfd_, &*epvs.begin(), epvs.size(), epollWaitSecondMs);
         // 11、监听套接字的有可读事件了（有客户端连接了）
         if (num > 0)
         {
@@ -688,10 +686,10 @@ int main()
 
     // 14、主线程退出
     // 销毁线程池
-    threadPollDestory(threadPoll);
+    threadPollDestory(epollThreadPoll);
     // 关闭监听文件描述符
     close(lfd);
     // 关闭主线程的epoll
-    close(epfd);
+    close(epvCallbackEvent.epfd_);
     return 0;
 }
