@@ -1,16 +1,31 @@
 #include <iostream>
 using namespace std;
 
-void test(const char* str, ...)
+void test(char** pp)
 {
-    char buf[1024] = {0};
-    snprintf(buf, 1024, str, 1000, "hello");
-    cout << buf << endl;
+    cout << "*pp:" << *pp << endl;
+    delete[] *pp;
+    *pp = new char[3]{2, 2, 2};
+    for (int i = 0; i < 3; i++)
+    {
+        cout << (*pp[i]) << endl;
+    }
+    
 }
 
 
 int main() 
 {   
-    test("hello, %d, %s", 100, "hello");
+    char* p = new char[3]{'1', '2', '3'};
+    for (int i = 0; i < 3; i++)
+    {
+        cout << p[i] << endl;
+    }
+    char** pp = &p;
+    for (int i = 0; i < 3; i++)
+    {
+        cout << *(pp+i) << endl;
+    }
+    cout << *pp << endl;
     return 0;
 }
