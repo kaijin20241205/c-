@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C++ Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Muduo/build/${fileBasenameNoExtension}", // 运行编译后的可执行文件
+            "preLaunchTask": "build",  // 在运行前触发名为build的tasks.json
+            "args": ["127.0.0.1", "8888"], // 命令行参数
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        }
+    ]
+}

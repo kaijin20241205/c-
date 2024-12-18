@@ -13,16 +13,155 @@
 using namespace std;
 
 
+
+// 发生错误时打印错误信息、代码行号并退出程序
+void errorExit(bool errorFlag, const char* errMsg, int errLine)
+{
+    if (errorFlag == true)
+    {
+        fprintf(stderr, "Error %s at: %d", errMsg, errLine);
+        exit(EXIT_FAILURE);
+    }
+}
+
+// 发生错误时打印错误信息、代码行号
+void errorPrint(bool errorFLag, const char* errMsg, int errLine)
+{
+    if (errorFLag == true)
+    {
+        fprintf(stderr, "Error %s at: %d", errMsg, errLine);
+    }
+}
+
+
 struct Buffer
 {
-
-    // 缓冲区大小
-    int bufLen_;
-    // 读指针缓冲区指针
-    int readIndex_;
-    // 写指针缓冲区指针
-    int writeIndex_;
+    // 缓存区
+    char* buffer_;
+    // Buffer头部预留容量
+    size_t headSpace_;
+    // Buffer总容量
+    size_t capacity_;
+    // 读指针缓冲区指针（从什么位置开始读）
+    size_t readIndex_;
+    // 写指针缓冲区指针（从什么位置开始写）
+    size_t writeIndex_;
 };
+
+Buffer* bufferInit(int headSize = 8, int bodySize = 4096)
+{
+    Buffer* buf = new Buffer;
+    errorPrint(
+        buf == nullptr, 
+        "bufferInit new Buffer error", 
+        __LINE__
+    );
+    memset(buf, 0x00, sizeof(Buffer));
+
+    buf->headSpace_ = headSize;
+    buf->capacity_ = headSize + bodySize;
+    buf->buffer_ = new char[buf->capacity_];
+    errorPrint(
+        buf->buffer_ == nullptr, 
+        "bufferInit new char error", 
+        __LINE__
+    );
+    memset(buf->buffer_, 0x00, sizeof(char) * (buf->capacity_));  
+
+    buf->readIndex_ = headSize;
+    buf->writeIndex_ = headSize;
+    return buf;
+}
+
+void bufferDestory(Buffer* buf)
+{
+    if (buf != nullptr)
+    {
+        if (buf->buffer_ != nullptr)
+        {
+            delete[] buf->buffer_;
+        }
+        delete buf;
+    }
+}
+
+// 可读字节
+size_t bufferReadableBytes(const Buffer* buf)
+{
+    return buf->writeIndex_ - buf->readIndex_;
+}
+
+// 可写字节
+size_t bufferWriteableBytes(const Buffer* buf)
+{
+    return buf->capacity_ - buf->writeIndex_;
+}
+
+// 确定写入时的容量够用
+void expandBytes(int len, Buffer* buf)
+{
+    size_t capacity = buf->capacity_ + len;
+    char* newBuf = new char[capacity]{0};
+    errorPrint(
+        newBuf == nullptr, 
+        "expandBytes new char error", 
+        __LINE__
+    );
+
+    memcpy(newBuf, buf->buffer_, buf->capacity_);
+    delete[] buf->buffer_;
+    buf->buffer_ = newBuf;
+    buf->capacity_ = capacity;
+}
+
+// 向buf添加数据
+void bufferAppend(const char* data, size_t dataLen, Buffer* buf)
+{
+    // 要写入的数据大于buf的可写容量就扩容
+    if (dataLen > bufferWriteableBytes(buf))
+    {
+        // 扩容的大小等于刚好能容纳数据后的大小
+        expandBytes(dataLen - bufferWriteableBytes(buf));
+    }
+}
+
+ssize_t bufferReadFd(int fd, Buffer* buf)
+{
+    char tempBuf[65536]{0};
+    iovec vec[2];
+    vec[0].iov_base = buf->buffer_ + buf->writeIndex_;
+    vec[0].iov_len = bufferWriteableBytes(buf);
+    vec[1].iov_base = tempBuf;
+    vec[1].iov_len = 65536;
+
+    // 如果可写字节数大于65535时不使用堆区变量一起从fd读数据
+    int vecCnt = buf->writeIndex_ > 65536 ? 1 : 2;
+
+    ssize_t n = readv(fd, vec, vecCnt);
+    // readv发送错误
+    if (n < 0)
+    {
+
+    }
+    // 只有buf参与了readfd
+    else if (n < bufferWriteableBytes(buf))
+    {
+        buf->writeIndex_ += n;
+    }
+    // 有堆区内存参与了readfd，说明buf已经被写满了
+    else
+    {
+        buf->writeIndex_ = buf->capacity_;
+
+    }
+
+
+}
+
+string bufferAsStr(char* msg, int msgLen, Buffer* buf)
+{
+
+}
 
 struct EpollThreadPoll
 {
@@ -72,24 +211,6 @@ struct EpvCallback
 };
 
 
-// 发生错误时打印错误信息、代码行号并退出程序
-void errorExit(bool errorFlag, const char* errMsg, int errLine)
-{
-    if (errorFlag == true)
-    {
-        fprintf(stderr, "Error %s at: %d", errMsg, errLine);
-        exit(EXIT_FAILURE);
-    }
-}
-
-// 发生错误时打印错误信息、代码行号
-void errorPrint(bool errorFLag, const char* errMsg, int errLine)
-{
-    if (errorFLag == true)
-    {
-        fprintf(stderr, "Error %s at: %d", errMsg, errLine);
-    }
-}
 
 
 // void echoServer(char* data, int dataLen, string* sendMsg)
@@ -132,17 +253,6 @@ void epollDel(void* data)
         __LINE__
     );
 }
-
-
-
-
-// 向前声明
-struct EpollThreadPoll;
-
-
-
-
-
 
 EpvCallback* initEpvCallback(int fd, 
                             int events, 
@@ -577,76 +687,41 @@ int initListenBindNonblock()
 
 int main() 
 {   
-    // 一、创建非阻塞套接字、为套接字绑定ip、port、将套接字设置为监听套接字
     int lfd = initListenBindNonblock();
-
-    // 二、创建子线程，让子线程创建属于自己的epoll并进入epoll_wait，等待主线程给子线程的epoll分配通信套接字
+   
     EpollThreadPoll* epollThreadPoll = epollThreadPollInit(1);
-    
-    // 三、为监听套接字绑定epoll_evnet，为监听套接字的epoll_evnet绑定事件回调对象并启动epoll_wait
 
-    /*
-        1、给线程池中的mainThreadEpfd赋值，当线程池的子线程数组小于1时，调用getNextSubThtreadEpfd函数
-        返回的就是主线程的epfd
-    */
-
-    // 2、给监听套接字创建epoll_event
     epoll_event lfdEpv{};
-    // 3、设置epoll_event的事件属性，让epoll监听EPOLLIN事件
-    lfdEpv.events = EPOLLIN;
-    /*
 
-        4、要使用到epoll_event.data.ptr这个属性来实现epoll反应堆，就先要设计一个自定义的事件回调结构体
-        结构体必须的属性：
-            1、套接字：（监听套接字、通信套接字）主线程拥有监听套接字，主线程调用accept获得通信套接字后分配给子线程、
-            子线程通过通信套接字读或者写
-            2、需要监听套接字的事件
-            3、套接字监听的事件发生后要调用的回调函数：主线程只触发acceptor回调，子线程触发reader、writer回调
-            4、epoll树根节点（epfd），用来将监听套接字、epoll_event事件绑定到主线程的epoll上，将通信套接字、epoll_event
-            绑定到子线程的epoll上
-            5、读写缓冲区（堆区内存，每个套接字都拥有自己的一份读写读写缓冲区），子线程读写时用的，设置合理的缓冲区大小可以
-            用来减少read、write系统调用
-            6、读写缓冲区的长度
-            7、读写指针，表示当前读或者写到什么位置
-            8、线程池指针：只给主线程的通信套接字使用的，通过该指针的对象获取到子线程的epfd，完成通信套接字的分配，如果
-            acceptor实现在main函数中可以删除这个属性
-    */
-    // 5、创建监听套接字的事件回调结构体对象，这个对象在main函数中，生命周期与主线程一样
-    // 并且也不需要使用到Buffer对象，所以没必要在堆区开辟
+    lfdEpv.events = EPOLLIN;
+
     EpvCallback epvCallbackEvent{};
     memset(&epvCallbackEvent, 0x00, sizeof(EpvCallback));
-    // 6、设置监听套接字的事件回调结构体属性：
+
     epvCallbackEvent.fd_ = lfd;
-    // 设置监听套接字的要让epoll监听的事件是什么
+
     epvCallbackEvent.events_ = lfdEpv.events;
-    // 设置监听套接字监听的事件发生变化后要调用的回调
+
     epvCallbackEvent.callback_ = acceptor;
-    // 设置监听套接字所属的epoll
+
     epvCallbackEvent.epfd_ = epollThreadPoll->mainThreadEpfd;
-    // 设置一下线程池对象
+
     epvCallbackEvent.epollThreadPoll_ = epollThreadPoll;
 
-    // 7、将监听套接字绑定的epoll_evnet中的data.ptr指针指向监听套接字回调结构体对象，完成epoll_event与事件回调结构体对象的绑定
     lfdEpv.data.ptr = reinterpret_cast<void*>(&epvCallbackEvent);
     
-    // 8、将监听套接字绑定的epoll_evnet添加到epoll
     errorExit(
         epoll_ctl(epvCallbackEvent.epfd_, EPOLL_CTL_ADD, lfd, &lfdEpv), 
         "epoll_ctl lfd error", 
         __LINE__
     );
 
-    // 9、创建一个epoll_event类型的动态数组用来接收epoll监听的返回事件
-    // 初始大小是16
     vector<epoll_event> epvs(16);
-    // epoll_wait的超时等待时间设置为10000毫秒
     int epollWaitSecondMs = 10000;
 
-    // 10、启动主线程的epoll_wait
     while (true)
     {
         int num = epoll_wait(epvCallbackEvent.epfd_, &*epvs.begin(), epvs.size(), epollWaitSecondMs);
-        // 11、监听套接字的有可读事件了（有客户端连接了）
         if (num > 0)
         {
             auto it = epvs.begin();
@@ -655,27 +730,16 @@ int main()
                 EpvCallback* epvCallback = reinterpret_cast<EpvCallback*>(it->data.ptr);
                 if (epvCallback->fd_ == lfd)
                 {
-                    // 在reactors in threads模型中（子线程数量大于等于1）主线程中的epvCallback->callback_都是acceptor函数
-                    /*
-                        四、调用acceptor回调函数，大概做下面4件事情
-                        1、通过accept4获取通信套接字
-                        2、将通信套接字创建并绑定epoll_event结构体对象
-                        3、为通信套接字的epoll_event结构体对象创建并绑定事件回调结构体对象
-                        4、将通信套接字、通信套接字绑定的epoll_evnet分配给子线程的epoll
-                    */
                     epvCallback->callback_(epvCallback->fd_, it->events, it->data.ptr);
                 }
             }
         }
-        // 12、监听套接字在经过10000毫秒后仍然没有可读事件发生（没有客户端连接）
         else if (num == 0)
         {
             cout << "mainthread: " << pthread_self() << " epoll_wait timeout..." << endl;
         }
-        // 13、epoll_wait发生错误
         else
         {
-            // epoll_wait被信号打断就忽略否则就打印错误后退出程序
             errorExit(
                 errno != EINTR, 
                 "epoll_wait error", 
@@ -684,12 +748,8 @@ int main()
         } 
     }
 
-    // 14、主线程退出
-    // 销毁线程池
     threadPollDestory(epollThreadPoll);
-    // 关闭监听文件描述符
     close(lfd);
-    // 关闭主线程的epoll
     close(epvCallbackEvent.epfd_);
     return 0;
 }
