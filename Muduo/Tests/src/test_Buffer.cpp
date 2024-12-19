@@ -223,22 +223,73 @@ TEST(buffer_retrieve, buffer_retrieve_zero)
     {
         free(retrieveZeroMsg);
     }
+    bufferDestory(&buffer);
 }
 
-TEST(buffer_retrieve, buffer_retrieve_all)
+TEST(buffer_retrieve, buffer_retrieves)
 {
-    
+    Buffer* buffer = bufferInit();
+    const char* msg = "hello world";
+    ssize_t msgLen = strlen(msg);
+    bufferAppend(msg, msgLen, buffer);
+    char* retrieveAllMsg = bufferRetrieveAsString(msgLen, buffer);
+    ASSERT_TRUE(msgLen == strlen(retrieveAllMsg));
+    ASSERT_TRUE(strcmp(msg, retrieveAllMsg) == 0);
+    ASSERT_TRUE(bufferWriteableBytes(buffer) == 4096);
+    ASSERT_TRUE(bufferReadableBytes(buffer) == 0);
+    bufferAppend(msg, msgLen, buffer);
+    for (int i = 0; i < msgLen; i++)
+    {
+        char* p = bufferRetrieveAsString(1, buffer);
+        ASSERT_TRUE(strncmp(p, &(msg[i]), 1) == 0);
+        ASSERT_TRUE(*p == msg[i]);
+        free(p);
+    }
+    char* p = bufferRetrieveAsString(10, buffer);
+    ASSERT_TRUE(strcmp(p, "\0") == 0);
+    ASSERT_TRUE(bufferReadableBytes(buffer) == 0);
+    ASSERT_TRUE(bufferWriteableBytes(buffer) == 4096);
+    while (bufferReadableBytes(buffer) != 100)
+    {
+        bufferAppend("hello", 5, buffer);
+    }
+    ASSERT_TRUE(bufferReadableBytes(buffer) == 100);
+    ASSERT_TRUE(bufferWriteableBytes(buffer) == 3996);
+    bufferDestory(&buffer);
 }
 
-
-// TEST(buffer, buffer_ensure)
-// {
-//     Buffer* buffer = bufferInit(8, 16);
-//     const char* msg = "hello world";
-//     bufferAppend(msg, strlen(msg), buffer);
-// }
-
-
+TEST(buffer, buffer_ensure)
+{
+    Buffer* buffer = bufferInit(8, 16);
+    const char* msg = "hello world";
+    ssize_t msgLen = strlen(msg);
+    bufferAppend(msg, msgLen, buffer);
+    char* retrieveMsg = bufferRetrieveAsString(6, buffer);
+    free(retrieveMsg);
+    ASSERT_TRUE(bufferWriteableBytes(buffer) == 5);
+    ASSERT_TRUE(bufferReadableBytes(buffer) == 5);
+    ensureWriteBytes(msgLen, buffer);
+    ASSERT_TRUE(bufferWriteableBytes(buffer) == 11);
+    bufferAppend(msg, msgLen, buffer);
+    retrieveMsg = bufferRetrieveAllAsString(buffer);
+    ASSERT_TRUE(strcmp(retrieveMsg, "worldhelloworld"));
+    free(retrieveMsg);
+    ASSERT_TRUE(bufferWriteableBytes(buffer) == 16);
+    ASSERT_TRUE(bufferReadableBytes(buffer) == 0);
+    bufferAppend(msg, msgLen, buffer);
+    ASSERT_TRUE(bufferWriteableBytes(buffer) == 5);
+    ASSERT_TRUE(bufferReadableBytes(buffer) == msgLen);
+    ensureWriteBytes(11, buffer);
+    ASSERT_TRUE(bufferReadableBytes(buffer) == msgLen);
+    ASSERT_TRUE(bufferWriteableBytes(buffer) == 11);
+    bufferAppend(msg, msgLen, buffer);
+    retrieveMsg = bufferRetrieveAllAsString(buffer);
+    ASSERT_TRUE(strcmp(retrieveMsg, "hello worldhello world") == 0);
+    free(retrieveMsg);
+    ASSERT_TRUE(bufferWriteableBytes(buffer) == 22);
+    ASSERT_TRUE(bufferReadableBytes(buffer) == 0);
+    bufferDestory(&buffer);
+}
 
 
 int main(int argc, char** argv)

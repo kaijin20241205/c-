@@ -121,7 +121,8 @@ void bufferAppend(const char* data, ssize_t dataLen, Buffer* buf)
 
 size_t bufferReadFd(int fd, Buffer* buf, int* errorNum)
 {
-    char tempBuf[65536]{0};
+    char tempBuf[65536];
+    memset(tempBuf, 0x00, 65536);
     iovec vec[2];
     vec[0].iov_base = buf->buffer_ + buf->writeIndex_;
     vec[0].iov_len = bufferWriteableBytes(buf);
@@ -195,8 +196,8 @@ char* bufferRetrieveAsString(ssize_t n, Buffer* buf)
     }
     else
     {
-        msg = (char*)malloc(n);
-        memset(msg, 0x00, n);
+        msg = (char*)malloc(n + 1);
+        memset(msg, 0x00, n + 1);
         memcpy(msg, buf->buffer_ + buf->readIndex_, n);
         bufferRetrieve(n, buf);
     }

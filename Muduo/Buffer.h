@@ -1,4 +1,5 @@
-#pragma once
+#ifndef BUFFER
+#define BUFFER
 // #include <stddef.h>      size_t
 #include <stdio.h>
 
@@ -54,3 +55,6 @@ void bufferRetrieve(ssize_t n, Buffer* buf);
 
 // 返回buffer中n个字节的可读数据
 char* bufferRetrieveAsString(ssize_t n, Buffer* buf);
+
+
+#endif
