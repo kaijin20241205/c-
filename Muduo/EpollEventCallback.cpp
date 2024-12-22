@@ -5,6 +5,7 @@
 #include <sys/epoll.h>
 #include <string.h>         // memset
 #include <stdlib.h>         // malloc、free
+#include <unistd.h>
 
 
 int epollCreate()
@@ -43,7 +44,7 @@ void epollMod(void* data)
     epv.data.ptr = data;
     errorPrint(
         epoll_ctl(epvCallback->epfd_, EPOLL_CTL_MOD, epvCallback->fd_, &epv) == -1, 
-        "epollMdd error", 
+        "epollMod error", 
         __FILE__, 
         __LINE__
     );
@@ -54,22 +55,24 @@ void epollDel(void* data)
     EpvCallback* epvCallback = (EpvCallback*)data;
     errorPrint(
         epoll_ctl(epvCallback->epfd_, EPOLL_CTL_DEL, epvCallback->fd_, NULL) == -1, 
-        "epollMdd error", 
+        "epollDel error", 
         __FILE__, 
         __LINE__
     );
 }
 
-EpvCallback* initEpvCallback(int fd, 
+EpvCallback* epvCallbackInit(int fd, 
                             int events, 
                             void(*callback)(int fd, int revents, void*data), 
                             int epfd, 
-                            EpollThreadPoll* epollThreadPoll)
+                            EpollThreadPoll* epollThreadPoll, 
+                            void(*func)(char* clientMsg, ssize_t clientMsgLen, Buffer* output)
+                            )
 {
     EpvCallback* epvCallback = (EpvCallback*)malloc(sizeof(EpvCallback));
     errorExit(
         epvCallback == NULL, 
-        "initEpvCallback error", 
+        "epvCallbackInit error", 
         __FILE__, 
         __LINE__
     );
@@ -79,6 +82,7 @@ EpvCallback* initEpvCallback(int fd,
     epvCallback->callback_ = callback;
     epvCallback->epfd_ = epfd;
     epvCallback->epollThreadPoll_ = epollThreadPoll;
+    epvCallback->func_ = func;
     epvCallback->inputBuf_ = bufferInit();
     epvCallback->outputBuf_ = bufferInit();
 
@@ -97,6 +101,7 @@ void epvCallbackDestory(EpvCallback** epvCallback)
         {
             bufferDestory(&((*epvCallback)->outputBuf_));
         }
+        close((*epvCallback)->fd_);
         free(*epvCallback);
         *epvCallback = NULL;
     }

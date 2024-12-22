@@ -19,7 +19,7 @@
                 "-lgtest",                                  // 指定连接gtest
                 "-lgtest_main",                             // 指定连接gtest_main
                 "-lpthread",                                // 指定连接线程库
-                "-lrt"                                      // 用于链接 POSIX 实时扩展库(librt)
+                "-lrt",                                      // 用于链接 POSIX 实时扩展库(librt)
             ],
             "options": {
                 "cwd": "${fileDirname}"

@@ -292,10 +292,4 @@ TEST(buffer, buffer_ensure)
 }
 
 
-int main(int argc, char** argv)
-{
-    // 初始化googletest
-    ::testing::InitGoogleTest(&argc, argv);
-    // 运行所有测试用例
-    return RUN_ALL_TESTS();
-}
+

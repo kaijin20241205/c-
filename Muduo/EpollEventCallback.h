@@ -1,6 +1,7 @@
 #ifndef EPOLL_EVENT_CALLBACK
 #define EPOLL_EVENT_CALLBACK
 #include <stddef.h>         // NULL
+#include <stdio.h>
 
 // 先前声明
 struct Buffer;
@@ -14,8 +15,10 @@ struct EpvCallback
     int fd_;
     // 监听的事件类型
     int events_;
-    // 发生变化后我们要做的业务逻辑
+    // epoll触发的反应堆函数
     void(*callback_)(int fd, int events, void* data);
+    // 反应堆去触发的函数：要做的业务逻辑
+    void(*func_)(char* clientMsg, ssize_t clientMsgLen, Buffer* output);
     // 对应线程的epoll树根节点
     int epfd_;
     // 接受缓冲区
@@ -38,7 +41,9 @@ EpvCallback* epvCallbackInit(int fd,
                             int events, 
                             void(*callback)(int fd, int revents, void*data), 
                             int epfd, 
-                            EpollThreadPoll* epollThreadPoll = NULL);
+                            EpollThreadPoll* epollThreadPoll = NULL, 
+                            void(*func)(char* clientMsg, ssize_t clientMsgLen, Buffer* output) = NULL
+                            );
 
 void epvCallbackDestory(EpvCallback** epvCallback);
 

@@ -41,9 +41,6 @@ void ensureWriteBytes(ssize_t len, Buffer* buf);
 // 向buf添加数据
 void bufferAppend(const char* data, ssize_t dataLen, Buffer* buf);
 
-// 从套接字中读取数到buf
-size_t bufferReadFd(int fd, Buffer* buf, int* errorNum);
-
 // 读取buffer中所有可读数据
 void bufferRetrieveAll(Buffer* buf);
 
@@ -56,5 +53,10 @@ void bufferRetrieve(ssize_t n, Buffer* buf);
 // 返回buffer中n个字节的可读数据
 char* bufferRetrieveAsString(ssize_t n, Buffer* buf);
 
+// 从套接字中读取数到buf
+size_t bufferReadFd(int fd, Buffer* buf, int* errorNum);
+
+// 从buffer写入数据到套接字中
+size_t bufferWriteFd(int fd, Buffer* buf, int* errorNum);
 
 #endif

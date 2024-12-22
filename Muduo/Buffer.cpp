@@ -5,6 +5,8 @@
 #include <string.h>     // memset
 #include <sys/uio.h>    // readv
 #include <errno.h>
+#include <unistd.h>     // write
+
 
 
 Buffer* bufferInit(ssize_t headSize, ssize_t bodySize)
@@ -119,47 +121,6 @@ void bufferAppend(const char* data, ssize_t dataLen, Buffer* buf)
     buf->writeIndex_ += dataLen;
 }
 
-size_t bufferReadFd(int fd, Buffer* buf, int* errorNum)
-{
-    char tempBuf[65536];
-    memset(tempBuf, 0x00, 65536);
-    iovec vec[2];
-    vec[0].iov_base = buf->buffer_ + buf->writeIndex_;
-    vec[0].iov_len = bufferWriteableBytes(buf);
-    vec[1].iov_base = tempBuf;
-    vec[1].iov_len = 65536;
-
-    // 如果可写字节数大于65535时不使用堆区变量一起从fd读数据
-    int vecCnt = buf->writeIndex_ > 65536 ? 1 : 2;
-
-    size_t n = readv(fd, vec, vecCnt);
-    // readv发生错误
-    if (n < 0)
-    {
-        *errorNum = errno;
-        errorPrint(
-            true, 
-            "readv error", 
-            __FILE__, 
-            __LINE__
-        );
-        return -1;
-    }
-    // 只有buf参与了readfd
-    else if (n < bufferWriteableBytes(buf))
-    {
-        buf->writeIndex_ += n;
-    }
-    // 有堆区内存参与了readfd，说明buf已经被写满了
-    else
-    {
-        ssize_t tempLen = n - bufferWriteableBytes(buf);
-        buf->writeIndex_ = buf->capacity_;
-        bufferAppend(tempBuf, tempLen, buf);
-    }
-    return n;
-}
-
 void bufferRetrieveAll(Buffer* buf)
 {
     buf->readIndex_ = buf->writeIndex_ = buf->headSpace_;
@@ -202,4 +163,68 @@ char* bufferRetrieveAsString(ssize_t n, Buffer* buf)
         bufferRetrieve(n, buf);
     }
     return msg;
+}
+
+size_t bufferReadFd(int fd, Buffer* buf, int* errorNum)
+{
+    char tempBuf[65536];
+    memset(tempBuf, 0x00, 65536);
+    iovec vec[2];
+    vec[0].iov_base = buf->buffer_ + buf->writeIndex_;
+    vec[0].iov_len = bufferWriteableBytes(buf);
+    vec[1].iov_base = tempBuf;
+    vec[1].iov_len = 65536;
+
+    // 如果可写字节数大于65535时不使用堆区变量一起从fd读数据
+    int vecCnt = buf->writeIndex_ > 65536 ? 1 : 2;
+
+    size_t n = readv(fd, vec, vecCnt);
+    // readv发生错误
+    if (n <= 0)
+    {
+        *errorNum = errno;
+        // errorPrint(
+        //     true, 
+        //     "readv error", 
+        //     __FILE__, 
+        //     __LINE__
+        // );
+        return -1;
+    }
+    // 只有buf参与了readfd
+    else if (n < bufferWriteableBytes(buf))
+    {
+        buf->writeIndex_ += n;
+    }
+    // 有堆区内存参与了readfd，说明buf已经被写满了
+    else
+    {
+        ssize_t tempLen = n - bufferWriteableBytes(buf);
+        buf->writeIndex_ = buf->capacity_;
+        bufferAppend(tempBuf, tempLen, buf);
+    }
+    return n;
+}
+
+size_t bufferWriteFd(int fd, Buffer* buf, int* errorNum)
+{
+    size_t n = write(fd, 
+                    buf->buffer_ + buf->readIndex_, 
+                    bufferReadableBytes(buf));
+    if (n <= 0)
+    {
+        *errorNum = errno;
+        errorPrint(
+            true, 
+            "readv error", 
+            __FILE__, 
+            __LINE__
+        );
+        return -1;
+    }
+    else
+    {
+        bufferRetrieve(n, buf);
+        return n;
+    }
 }
