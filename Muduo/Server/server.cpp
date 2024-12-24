@@ -3,6 +3,7 @@
 #include <netinet/tcp.h>
 #include <sys/epoll.h>
 #include <string.h>
+#include <sys/resource.h>
 #include <errno.h>
 
 #include "MyError.h"
@@ -17,6 +18,34 @@ void echoServer(char *clientMsg, ssize_t clientMsgLen, Buffer *output, void* dat
     bufferAppend(clientMsg, clientMsgLen, output);
 }
 
+void setFdLimit(rlim_t newLimit)
+    {
+        rlimit limit;
+        if (getrlimit(RLIMIT_NOFILE, &limit) == -1)
+        {
+            errorExit(
+                true, 
+                "setFdLimit getrlimit error", 
+                __FILE__, 
+                __LINE__
+            );
+        }
+        limit.rlim_cur = newLimit;
+        if (newLimit > limit.rlim_max)
+        {
+            limit.rlim_max = newLimit;
+        }
+
+        if (setrlimit(RLIMIT_NOFILE, &limit) == -1)
+        {
+            errorExit(
+                true, 
+                "setFdLimit setrlimit error", 
+                __FILE__, 
+                __LINE__
+            );
+        }
+    }
 
 // 创建套接字、绑定ip、port并设置监听状态
 int initListenBindNonblock()
@@ -76,10 +105,11 @@ int initListenBindNonblock()
 
 int main() 
 {   
+    setFdLimit(15000);
     // 创建监听文件描述符
     int lfd = initListenBindNonblock();
     // 创建线程池
-    EpollThreadPoll* epollThreadPoll = epollThreadPollInit(2);
+    EpollThreadPoll* epollThreadPoll = epollThreadPollInit(4);
     epollThreadPollStart(epollThreadPoll);
     // 给监听文件描述符创建事件回调结构体
     EpvCallback* lfdEpvCallback = epvCallbackInit(

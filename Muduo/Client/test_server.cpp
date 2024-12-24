@@ -11,12 +11,14 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/resource.h>
 using namespace std;
 
 #include "EpollEventCallback.h"
 #include "CallbackFunction.h"
 #include "Buffer.h"
 #include "EpollThreadPoll.h"
+#include "MyError.h"
 
 
 struct Client
@@ -80,6 +82,36 @@ public:
             clients_[i].recieves_ = 0;
         }
         epollThreadPoll_ = epollThreadPollInit(clientNum);
+    }
+    
+    void setFdLimit(rlim_t newLimit)
+    {
+        rlimit limit;
+        if (getrlimit(RLIMIT_NOFILE, &limit) == -1)
+        {
+            errorExit(
+                true, 
+                "setFdLimit getrlimit error", 
+                __FILE__, 
+                __LINE__
+            );
+        }
+        limit.rlim_cur = newLimit;
+        if (newLimit > limit.rlim_max)
+        {
+            limit.rlim_max = newLimit;
+        }
+
+        if (setrlimit(RLIMIT_NOFILE, &limit) == -1)
+        {
+            errorExit(
+                true, 
+                "setFdLimit setrlimit error", 
+                __FILE__, 
+                __LINE__
+            );
+        }
+        cout << "new limits: soft = " << limit.rlim_cur << ", hard = " << limit.rlim_max << endl;
     }
 
     int setSocketNonblock(int fd)
@@ -196,7 +228,7 @@ public:
 int main()
 {
     
-    ClientsTest clientTest(1000, 16384, 1);
+    ClientsTest clientTest(1000, 16384, 2);
     clientTest.start();
 }
 
