@@ -12,7 +12,7 @@
 #include "Buffer.h"
 
 
-void echoServer(char *clientMsg, ssize_t clientMsgLen, Buffer *output)
+void echoServer(char *clientMsg, ssize_t clientMsgLen, Buffer *output, void* data)
 {
     bufferAppend(clientMsg, clientMsgLen, output);
 }
@@ -79,7 +79,8 @@ int main()
     // 创建监听文件描述符
     int lfd = initListenBindNonblock();
     // 创建线程池
-    EpollThreadPoll* epollThreadPoll = epollThreadPollInit(0);
+    EpollThreadPoll* epollThreadPoll = epollThreadPollInit(2);
+    epollThreadPollStart(epollThreadPoll);
     // 给监听文件描述符创建事件回调结构体
     EpvCallback* lfdEpvCallback = epvCallbackInit(
                                     lfd, 

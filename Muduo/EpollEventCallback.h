@@ -18,7 +18,8 @@ struct EpvCallback
     // epoll触发的反应堆函数
     void(*callback_)(int fd, int events, void* data);
     // 反应堆去触发的函数：要做的业务逻辑
-    void(*func_)(char* clientMsg, ssize_t clientMsgLen, Buffer* output);
+    void(*func_)(char* clientMsg, ssize_t clientMsgLen, Buffer* output, void* data);
+    void* data_;
     // 对应线程的epoll树根节点
     int epfd_;
     // 接受缓冲区
@@ -42,7 +43,8 @@ EpvCallback* epvCallbackInit(int fd,
                             void(*callback)(int fd, int revents, void*data), 
                             int epfd, 
                             EpollThreadPoll* epollThreadPoll = NULL, 
-                            void(*func)(char* clientMsg, ssize_t clientMsgLen, Buffer* output) = NULL
+                            void(*func)(char* clientMsg, ssize_t clientMsgLen, Buffer* output, void*data) = NULL, 
+                            void* data = NULL
                             );
 
 void epvCallbackDestory(EpvCallback** epvCallback);

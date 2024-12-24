@@ -66,7 +66,8 @@ EpvCallback* epvCallbackInit(int fd,
                             void(*callback)(int fd, int revents, void*data), 
                             int epfd, 
                             EpollThreadPoll* epollThreadPoll, 
-                            void(*func)(char* clientMsg, ssize_t clientMsgLen, Buffer* output)
+                            void(*func)(char* clientMsg, ssize_t clientMsgLen, Buffer* output, void* data), 
+                            void* data
                             )
 {
     EpvCallback* epvCallback = (EpvCallback*)malloc(sizeof(EpvCallback));
@@ -85,12 +86,14 @@ EpvCallback* epvCallbackInit(int fd,
     epvCallback->func_ = func;
     epvCallback->inputBuf_ = bufferInit();
     epvCallback->outputBuf_ = bufferInit();
+    epvCallback->data_ = data;
 
     return epvCallback;
 }
 
 void epvCallbackDestory(EpvCallback** epvCallback)
 {
+    
     if (epvCallback != NULL && *epvCallback != NULL)
     {
         if ((*epvCallback)->inputBuf_ != NULL)

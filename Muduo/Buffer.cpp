@@ -59,24 +59,24 @@ void bufferDestory(Buffer** buf)
     }
 }
 
-ssize_t bufferReadableBytes(const Buffer* buf)
+size_t bufferReadableBytes(const Buffer* buf)
 {
     return buf->writeIndex_ - buf->readIndex_;
 }
 
-ssize_t bufferWriteableBytes(const Buffer* buf)
+size_t bufferWriteableBytes(const Buffer* buf)
 {
     return buf->capacity_ - buf->writeIndex_;
 }
 
-ssize_t bufferPrependBytes(const Buffer* buf)
+size_t bufferPrependBytes(const Buffer* buf)
 {
     return buf->readIndex_ - buf->headSpace_;
 }
 
-void bufferExpandByest(ssize_t n, Buffer* buf)
+void bufferExpandByest(size_t n, Buffer* buf)
 {
-    ssize_t newCapacity = buf->capacity_ + n;
+    size_t newCapacity = buf->capacity_ + n;
     char* newBuf = (char*)malloc(newCapacity);
     if (newBuf == NULL)
     {
@@ -96,7 +96,7 @@ void bufferExpandByest(ssize_t n, Buffer* buf)
     buf->capacity_ = newCapacity;
 }
 
-void ensureWriteBytes(ssize_t len, Buffer* buf)
+void ensureWriteBytes(size_t len, Buffer* buf)
 {
     // 预留区域+当前可写区域都小于要写入数据的大小就对buffer的容量扩容len - bufferWriteableBytes
     if (bufferPrependBytes(buf) + bufferWriteableBytes(buf) < len)
@@ -114,7 +114,7 @@ void ensureWriteBytes(ssize_t len, Buffer* buf)
     }
 }
 
-void bufferAppend(const char* data, ssize_t dataLen, Buffer* buf)
+void bufferAppend(const char* data, size_t dataLen, Buffer* buf)
 {
     ensureWriteBytes(dataLen, buf);
     memcpy(buf->buffer_ + buf->writeIndex_, data, dataLen);
@@ -128,7 +128,7 @@ void bufferRetrieveAll(Buffer* buf)
 
 char* bufferRetrieveAllAsString(Buffer* buf)
 {
-    ssize_t len = bufferReadableBytes(buf) + 1;
+    size_t len = bufferReadableBytes(buf) + 1;
     char* result = (char*)malloc(len);
     memset(result, 0x00, len);
     memcpy(result, buf->buffer_ + buf->readIndex_, bufferReadableBytes(buf));
@@ -136,7 +136,7 @@ char* bufferRetrieveAllAsString(Buffer* buf)
     return result;
 }
 
-void bufferRetrieve(ssize_t n, Buffer* buf)
+void bufferRetrieve(size_t n, Buffer* buf)
 {
     if (n >= bufferReadableBytes(buf))
     {
@@ -148,7 +148,7 @@ void bufferRetrieve(ssize_t n, Buffer* buf)
     }
 }
 
-char* bufferRetrieveAsString(ssize_t n, Buffer* buf)
+char* bufferRetrieveAsString(size_t n, Buffer* buf)
 {
     char* msg;
     if (n >= bufferReadableBytes(buf))
@@ -165,7 +165,7 @@ char* bufferRetrieveAsString(ssize_t n, Buffer* buf)
     return msg;
 }
 
-size_t bufferReadFd(int fd, Buffer* buf, int* errorNum)
+ssize_t bufferReadFd(int fd, Buffer* buf, int* errorNum)
 {
     char tempBuf[65536];
     memset(tempBuf, 0x00, 65536);
@@ -178,7 +178,7 @@ size_t bufferReadFd(int fd, Buffer* buf, int* errorNum)
     // 如果可写字节数大于65535时不使用堆区变量一起从fd读数据
     int vecCnt = buf->writeIndex_ > 65536 ? 1 : 2;
 
-    size_t n = readv(fd, vec, vecCnt);
+    ssize_t n = readv(fd, vec, vecCnt);
     // readv发生错误
     if (n <= 0)
     {
@@ -199,16 +199,16 @@ size_t bufferReadFd(int fd, Buffer* buf, int* errorNum)
     // 有堆区内存参与了readfd，说明buf已经被写满了
     else
     {
-        ssize_t tempLen = n - bufferWriteableBytes(buf);
+        size_t tempLen = n - bufferWriteableBytes(buf);
         buf->writeIndex_ = buf->capacity_;
         bufferAppend(tempBuf, tempLen, buf);
     }
     return n;
 }
 
-size_t bufferWriteFd(int fd, Buffer* buf, int* errorNum)
+ssize_t bufferWriteFd(int fd, Buffer* buf, int* errorNum)
 {
-    size_t n = write(fd, 
+    ssize_t n = write(fd, 
                     buf->buffer_ + buf->readIndex_, 
                     bufferReadableBytes(buf));
     if (n <= 0)

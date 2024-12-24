@@ -70,7 +70,7 @@ void reader(int cfd, int revents, void* data)
             {
                 ssize_t clientMessageLen = bufferReadableBytes(epvCallbackEvent->inputBuf_);
                 char* clientMssage = bufferRetrieveAllAsString(epvCallbackEvent->inputBuf_);
-                epvCallbackEvent->func_(clientMssage, clientMessageLen, epvCallbackEvent->outputBuf_);
+                epvCallbackEvent->func_(clientMssage, clientMessageLen, epvCallbackEvent->outputBuf_, epvCallbackEvent->data_);
                 free(clientMssage);
                 ssize_t outputMsgLen = bufferReadableBytes(epvCallbackEvent->outputBuf_);
                 n = bufferWriteFd(cfd, epvCallbackEvent->outputBuf_, &errorNum);
