@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/server.dir/server.cpp.o -o ../bin/server  -Wl,-rpath,/home/kaijin/coding/learningCPP/Muduo/build/lib ../lib/libcmuduo.so 

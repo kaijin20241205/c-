@@ -1,9 +1,0 @@
-/home/kaijin/coding/learningCPP/build/CMakeFiles/cmuduo.dir
-/home/kaijin/coding/learningCPP/build/CMakeFiles/edit_cache.dir
-/home/kaijin/coding/learningCPP/build/CMakeFiles/rebuild_cache.dir
-/home/kaijin/coding/learningCPP/build/Server/CMakeFiles/server.dir
-/home/kaijin/coding/learningCPP/build/Server/CMakeFiles/edit_cache.dir
-/home/kaijin/coding/learningCPP/build/Server/CMakeFiles/rebuild_cache.dir
-/home/kaijin/coding/learningCPP/build/Client/CMakeFiles/client.dir
-/home/kaijin/coding/learningCPP/build/Client/CMakeFiles/edit_cache.dir
-/home/kaijin/coding/learningCPP/build/Client/CMakeFiles/rebuild_cache.dir

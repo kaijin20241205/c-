@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC -shared -Wl,-soname,libAll.so -o lib/libAll.so CMakeFiles/All.dir/src/Buffer.cpp.o CMakeFiles/All.dir/src/CallbackFunction.cpp.o CMakeFiles/All.dir/src/EpollEventCallback.cpp.o CMakeFiles/All.dir/src/MyError.cpp.o CMakeFiles/All.dir/src/MyMemoryHook.cpp.o 

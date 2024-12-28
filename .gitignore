@@ -1,0 +1,34 @@
+# 忽略编译输出文件夹
+build/
+
+# 忽略生成的二进制文件
+*.exe
+*.out
+*.app
+*.log
+*.obj
+*.o
+*.so
+*.a
+*.lib
+*.dll
+*.dSYM/
+
+# 忽略 CMake 生成的文件
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+*.ninja
+build.ninja
+rules.ninja
+
+# 忽略 IDE/编辑器的配置文件
+*.code-workspace
+
+# Linux
+*.swp
+*.swo
+*~
+
