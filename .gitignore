@@ -9,7 +9,7 @@ build/
 *.obj
 *.o
 *.so
-*.a
+#*.a for gtest
 *.lib
 *.dll
 *.dSYM/
