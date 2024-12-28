@@ -7,4 +7,4 @@ add_executable(server server.cpp)
 link_directories(${CMAKE_SOURCE_DIR}/build/lib)
 
 # 将动态库链接到可执行文件
-target_link_libraries(server cmuduo)
+target_link_libraries(server cwebserver)

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(CMUDUO)
+project(CWEBSERVER)
 
 # CMAKE_BINARY_DIR变量：运行cmke命令的目录
 # 设置生成的可执行文件存放到什么位置
@@ -11,7 +11,7 @@ include_directories("/include")
 # 获取参与编译的所有库文件的列表
 file(GLOB SOURCES "src/*.cpp")
 # 编译生成动态库
-add_library(cmuduo SHARED ${SOURCES})
+add_library(cwebserver SHARED ${SOURCES})
 
 
 add_subdirectory(Server)
