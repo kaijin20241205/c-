@@ -1,0 +1,37 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "build",                                           // 任务名
+            "command": "/usr/bin/g++",                                  // 编译器路径
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",                                                   // 编译加入调试
+                "-O2",                                                  // 编译级别
+                "${fileDirname}/*.cpp",                                 // ${fileDirname}：当前运行文件的目录
+                "${workspaceFolder}/Muduo/src/*.cpp",                   // ${workspaceFolder}：当前vscode打开的目录
+                "-o",
+                "${workspaceFolder}/Muduo/build/bin/${fileBasenameNoExtension}",        // ${fileBasenameNoExtension}：表示当前文件名（不包含扩展名）
+                "-I${workspaceFolder}/Muduo/include/",                  // -I：指定头文件所在目录
+                "-I${workspaceFolder}/Muduo/Tests/include/gtest",       // 指定gtest头文件路径
+                "-L${workspaceFolder}/Muduo/Tests/include/lib",         // 指定gtest动态库路径
+                "-lgtest",                                              // 指定连接gtest
+                "-lgtest_main",                                         // 指定连接gtest_main
+                "-lpthread",                                            // 指定连接线程库
+                "-lrt",                                                 // 用于链接 POSIX 实时扩展库(librt)
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "调试器生成的任务。"
+        }
+    ],
+    "version": "2.0.0"
+}

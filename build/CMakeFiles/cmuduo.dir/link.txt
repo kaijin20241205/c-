@@ -1,0 +1,1 @@
+/usr/bin/g++ -fPIC -g -shared -Wl,-soname,libcmuduo.so -o lib/libcmuduo.so CMakeFiles/cmuduo.dir/src/Buffer.cpp.o CMakeFiles/cmuduo.dir/src/CallbackFunction.cpp.o CMakeFiles/cmuduo.dir/src/EpollEventCallback.cpp.o CMakeFiles/cmuduo.dir/src/EpollThreadPoll.cpp.o CMakeFiles/cmuduo.dir/src/MyError.cpp.o CMakeFiles/cmuduo.dir/src/MyMemoryHook.cpp.o 
