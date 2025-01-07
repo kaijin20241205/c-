@@ -2,14 +2,15 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "build",                                           // 任务名
-            "command": "/usr/bin/g++",                                  // 编译器路径
+            "label": "buildMuduo",
+            "command": "/usr/bin/g++",
             "args": [
                 "-fdiagnostics-color=always",
-                "-g",                                                   // 编译加入调试
-                "-O2",                                                  // 优化级别
-                "${fileDirname}/*.cpp",                                 // ${fileDirname}：当前运行文件的目录
-                "${workspaceFolder}/src/*.cpp",                         // ${workspaceFolder}：当前vscode打开的目录
+                "-g",
+                "-O2",
+                "-std=c++14",
+                "${file}", // 当前文件
+                // "${workspaceFolder}/src/*.cpp",      
                 "-o",
                 "${workspaceFolder}/build/bin/${fileBasenameNoExtension}",        // ${fileBasenameNoExtension}：表示当前文件名（不包含扩展名）
                 "-I${workspaceFolder}/include/",                        // -I：指定头文件所在目录
@@ -17,8 +18,7 @@
                 "-L${workspaceFolder}/Tests/include/lib",               // 指定gtest动态库路径
                 "-lgtest",                                              // 指定连接gtest
                 "-lgtest_main",                                         // 指定连接gtest_main
-                "-lpthread",                                            // 指定连接线程库
-                "-lrt"                                                 // 用于链接 POSIX 实时扩展库(librt)
+                "-lpthread"
             ],
             "options": {
                 "cwd": "${fileDirname}"

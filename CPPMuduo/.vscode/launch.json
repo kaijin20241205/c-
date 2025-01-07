@@ -1,0 +1,19 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "C++ Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/bin/${fileBasenameNoExtension}", // 运行编译后的可执行文件
+            "preLaunchTask": "buildMuduo",           // 在运行前触发名为build的tasks.json
+            "args": ["127.0.0.1", "8888"],      // 命令行参数
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        }
+    ]
+}
