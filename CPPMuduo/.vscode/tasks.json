@@ -10,7 +10,7 @@
                 "-O2",
                 "-std=c++14",
                 "${file}", // 当前文件
-                // "${workspaceFolder}/src/*.cpp",      
+                "${workspaceFolder}/src/*.cpp",      
                 "-o",
                 "${workspaceFolder}/build/bin/${fileBasenameNoExtension}",        // ${fileBasenameNoExtension}：表示当前文件名（不包含扩展名）
                 "-I${workspaceFolder}/include/",                        // -I：指定头文件所在目录
