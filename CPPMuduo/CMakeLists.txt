@@ -11,4 +11,4 @@ include_directories("/include")
 # 获取参与编译的所有库文件的列表
 file(GLOB SOURCES "src/*.cpp")
 # 编译生成动态库
-# add_library(CPPMUDUO SHARED ${SOURCES})
+add_library(cppmuduo SHARED ${SOURCES})

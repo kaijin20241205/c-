@@ -10,14 +10,16 @@
                 "-O2",
                 "-std=c++14",
                 "${file}", // 当前文件
-                "${workspaceFolder}/src/*.cpp",      
+                // "${workspaceFolder}/src/*.cpp",      
                 "-o",
                 "${workspaceFolder}/build/bin/${fileBasenameNoExtension}",        // ${fileBasenameNoExtension}：表示当前文件名（不包含扩展名）
                 "-I${workspaceFolder}/include/",                        // -I：指定头文件所在目录
                 "-I${workspaceFolder}/Tests/include",                   // 指定gtest头文件路径
                 "-L${workspaceFolder}/Tests/include/lib",               // 指定gtest动态库路径
-                "-lgtest",                                              // 指定连接gtest
-                "-lgtest_main",                                         // 指定连接gtest_main
+                "-L${workspaceFolder}/build/lib",                       // 指定自己的动态库路径
+                "-lgtest",                                              // 指定连接的动态库名称gtest
+                "-lgtest_main",                                         // 指定连接的动态库名称gtest_main
+                "-lcppmuduo",
                 "-lpthread"
             ],
             "options": {

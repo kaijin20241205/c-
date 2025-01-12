@@ -4,7 +4,7 @@
 
 #include "noncopyable.hpp"
 
-// #define MUDUO_DEBUG
+#define MUDUO_DEBUG
 
 
 #define LOG_INFO(logmsgFormat, ...) \
