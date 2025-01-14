@@ -17,14 +17,16 @@ public:
     
     // 获得一个当前时间的Timestamp类
     static Timestamp now();
+
+    // 返回一个无效的时间戳
+    static Timestamp invaild() { return Timestamp(); };
     
     // 返回一个符合人类阅读习惯的时间戳格式，该函数为常函数
     std::string toString() const;
-private:
-    // 从新纪元开始到现在为止的微秒数
-    // 为什么用int64_t而不是uint64_t？在1970年1月1日之前的数据可以用负数来表示
-    int64_t microsecondSinceEpoch_;
     
+    // 返回从新纪元开始到现在为止的微秒数
+    int64_t getMicrosecondSinceEpoch() const { return microsecondSinceEpoch_; };
+
     /* 
         微秒与秒的进率：
         为什么使用const修饰？
@@ -34,4 +36,17 @@ private:
         无需类内声明类外初始化，更加简洁方便
     */
     static const int secondRate_ = 1000 * 1000;
+
+private:
+    // 从新纪元开始到现在为止的微秒数
+    // 为什么用int64_t而不是uint64_t？在1970年1月1日之前的数据可以用负数来表示
+    int64_t microsecondSinceEpoch_;
 };
+
+
+// 给时间戳添加时间
+inline Timestamp addTime(Timestamp& timestamp, double seconds)
+{
+    int64_t delay = timestamp.getMicrosecondSinceEpoch() + static_cast<int64_t>(seconds * Timestamp::secondRate_);
+    return Timestamp(delay);
+}

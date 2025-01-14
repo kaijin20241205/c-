@@ -1,4 +1,5 @@
 #include <iostream>
+#include <atomic>
 
 #include "./include/gtest/gtest.h"
 #include "./../include/Logger.hpp"
@@ -7,6 +8,19 @@
 #include "./../include/Socket.hpp"
 
 using namespace std;
+
+// std::atomic<int64_t> test(0);
+int test = 0;
+void* test_add(void* num)
+{
+    for (int i = 0; i < 100000000; i++)
+    {
+        // test.fetch_add(1, std::memory_order_seq_cst);
+        test++;
+    }
+    return NULL;
+    
+}
 
 
 int main(int argc, char** argv)
@@ -20,7 +34,7 @@ int main(int argc, char** argv)
 
     LOG_DEBUG("%s%d", "hello", 5);
     LOG_DEBUG("%s%d", "hello", 6);
-
+    
     cout << "test Timestamp......................." << endl;
     cout << Timestamp::now().toString() << endl;
     cout << Timestamp::now().toString() << endl;
@@ -60,5 +74,24 @@ int main(int argc, char** argv)
     cout << "test..." << endl;
     RUN_ALL_TESTS();
     //test
+
+
+
+
+    // test use atomic
+    // pthread_t pthreads[50] = {};
+    // for (int i = 0; i < 50; i++)
+    // {
+    //     pthread_create(&pthreads[i], NULL, test_add, NULL);
+    // }
+    // for (int i = 0; i < 50; i++)
+    // {
+    //     pthread_join(pthreads[i], NULL);
+    // }
+
+    // cout << test << endl;
+
+
+
     return 0;
 }
