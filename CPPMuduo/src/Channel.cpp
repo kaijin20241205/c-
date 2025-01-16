@@ -1,5 +1,6 @@
 #include "./../include/Channel.hpp"
 #include "./../include/Timestamp.hpp"
+#include "./../include/EventLoop.hpp"
 
 #include <sys/epoll.h>
 
@@ -20,12 +21,20 @@ EPOLLHUP (0x010): 当连接断开或文件描述符挂起时触发，常见于�
 */
 const int Channel::kWriteEvent = EPOLLOUT | EPOLLHUP;
 
-
+/*
+EPOLLERR事件会被自动监听无需显示的指定，EPOLLERR 是一种错误事件，用于表示文件描述符出现了某种错误。
+常见触发场景包括：
+套接字发生错误，例如网络连接中断。
+写操作时对端已关闭。
+管道破裂。
+文件描述符不可用或无效。
+一旦发生这些错误，内核会将该事件通知给 epoll，即便你没有显式关注 EPOLLERR。
+*/
 
 // 更新channel的状态
 void Channel::update()
 {
-    // 等待EventLoop实现    
+    eventLoop_->updateChannel(this);
 }
 
 // 回调函数的防卫函数，来确保channel对象在生命周期内调用回调函数
@@ -51,7 +60,7 @@ void Channel::handleEventWithGuard(Timestamp timestamp)
 void Channel::handleEvent(Timestamp timestamp)
 {
     // 如果远端关闭了连接（例如close）并且缓冲区已经没有远端的数据要读取了，就关闭该连接
-    if ((event_ & EPOLLHUP) && (event_ & ~EPOLLIN))
+    if ((revent_ & EPOLLHUP) && !(revent_ & EPOLLIN))
     {
         if (closeEventCallback_)
         {
@@ -59,7 +68,7 @@ void Channel::handleEvent(Timestamp timestamp)
         }
     }
     // 缓冲区有远端发来的数据，去读取
-    if ((event_ & EPOLLIN) || (event_ & EPOLLPRI))
+    if ((revent_ & EPOLLIN) || (revent_ & EPOLLPRI))
     {
         if (readEventCallback_)
         {
@@ -67,7 +76,7 @@ void Channel::handleEvent(Timestamp timestamp)
         }
     }
     // 缓冲区有空间可以写入数据，去写入
-    if (event_ & EPOLLOUT)
+    if (revent_ & EPOLLOUT)
     {
         if (writeEventCallback_)
         {
@@ -75,7 +84,7 @@ void Channel::handleEvent(Timestamp timestamp)
         }
     }
     // 有错误事件发生，去处理（当前的实现并没有设置监听错误处理的函数，只有读、写相关）
-    if (event_ & EPOLLERR)
+    if (revent_ & EPOLLERR)
     {
         if (errorEventCallback_)
         {
@@ -94,5 +103,5 @@ void Channel::setTie(const std::shared_ptr<void>& obj)
 // 在POLLER上删除channel
 void Channel::remove()
 {
-
+    eventLoop_->removeChannel(this);
 }

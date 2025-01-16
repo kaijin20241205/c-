@@ -1,7 +1,8 @@
 #pragma once
+#include "./../include/noncopyable.hpp"
 
 class InetAddress;
-class Socket
+class Socket : noncopyable
 {
 public:
     // 禁止隐式类型转换-有参构造

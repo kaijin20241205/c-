@@ -4,7 +4,6 @@
 #include <functional>       // function
 #include <memory>           // weak_ptr
 
-
 class Timestamp;
 class EventLoop;
 class Channel : noncopyable
