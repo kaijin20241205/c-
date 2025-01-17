@@ -1,6 +1,6 @@
 # 忽略编译输出文件夹
 build/
-
+.vscode/settings.json
 # 忽略生成的二进制文件
 *.exe
 *.out
