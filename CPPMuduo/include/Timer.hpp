@@ -1,6 +1,7 @@
 #pragma once
 #include "./noncopyable.hpp"
-#include "./../include/Timestamp.hpp"
+#include "./Timestamp.hpp"
+#include "./Callbacks.hpp"
 
 #include <functional>
 #include <atomic>
@@ -10,7 +11,6 @@
 class Timer : noncopyable
 {
 public:
-    using TimerCallback = std::function<void()>;
     // 有参构造
     Timer(const TimerCallback cb, Timestamp when, double period) : 
     timerCallback_(std::move(cb)), 
@@ -43,8 +43,8 @@ private:
     // 定时器的重复周期
     double period_;
     /* 
-    唯一标识：没太明白这个表示到底有什么作用，我们已经使用了Timer的指针地址作为二叉树的唯一key，所以
-    当前好像没有这个的应用场景。
+    定时器序号-唯一标识：没太明白这个表示到底有什么作用，我们已经使用了Timer的指针地址作为二叉树的唯一key，
+    所以当前好像没有这个的应用场景。
     */
     int64_t senquence_;
     // 用来对senquence_进行原子性的递增

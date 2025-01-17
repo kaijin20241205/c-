@@ -1,6 +1,8 @@
 #include "./../include/TimeQueue.hpp"
 #include "./../include/Channel.hpp"
 #include "./../include/Logger.hpp"
+#include "./../include/Timestamp.hpp"
+#include "./../include/Timer.hpp"
 
 #include <sys/timerfd.h>
 #include <unistd.h>             // close
@@ -17,8 +19,7 @@ int createTimerFd()
     return timerFd;
 }
 
-
-
+// 构造函数
 TimeQueue::TimeQueue(EventLoop* eventLoop) : 
     eventLoop_(eventLoop), 
     timeFd_(createTimerFd()), 
@@ -32,32 +33,35 @@ TimeQueue::TimeQueue(EventLoop* eventLoop) :
         timeFdChannel_.setEnableReading();
     }
 
+// 析构函数
 TimeQueue::~TimeQueue()
 {
     // 不对任何事件感兴趣
     timeFdChannel_.setDisableAll();
-    // 将channel从POLLER上删除
+    // 将定时器channel从POLLER上删除
     timeFdChannel_.remove();
-    // 关闭timefd
+    // 关闭定时器timefd
     ::close(timeFd_);
-    // 清空timer合集
+    // 清空定时器timer合集
     timers_.clear();
 }
 
+// 给定时器集合添加定时器
+void addTimer(const TimerCallback cb, Timestamp when, double period)
+{
+    // 创建一个Timer
+    Timer* timer = new Timer(std::move(cb), when, period);
+    // 将timer添加所属的
+}
 
-// void TimeQueue::addTimer(Timer* timer)
-// {
+// 定时器对象被唤醒时的处理函数
+void TimeQueue::handleRead()
+{
 
-// }
-
-// // 定时器对象被唤醒时的处理函数
-// void TimeQueue::handleRead()
-// {
-
-// }
+}
 
 // 获得所有过期的定时器
-TimerList TimeQueue::getExpireTimers(Timestamp now)
+std::vector<Entry> TimeQueue::getExpireTimers(Timestamp now)
 {
     /*
     整体流程
@@ -87,10 +91,10 @@ TimerList TimeQueue::getExpireTimers(Timestamp now)
 }
 
 // 给已经添加的定时器重置过期时间
-void TimeQueue::resetTimer(Timer* tiemr)
-{
+// void TimeQueue::resetTimer(Timer* tiemr)
+// {
 
-}
+// }
 
 // bool TimeQueue::insert(Timer* timer)
 // {

@@ -1,7 +1,7 @@
 #pragma once
 #include "./noncopyable.hpp"
-#include "./../include/CurrentThreadId.hpp"
-#include "./../include/Timestamp.hpp"
+#include "./CurrentThreadId.hpp"
+#include "./Timestamp.hpp"
 
 #include <sys/types.h>      // pid_t
 #include <memory>           // std::unique_ptr

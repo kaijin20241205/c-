@@ -1,5 +1,5 @@
 #pragma once
-#include "./../include/noncopyable.hpp"
+#include "./noncopyable.hpp"
 
 class InetAddress;
 class Socket : noncopyable
